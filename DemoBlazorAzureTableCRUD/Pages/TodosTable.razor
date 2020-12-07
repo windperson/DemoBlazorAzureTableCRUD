@@ -1,0 +1,134 @@
+﻿@using Blazored.Modal
+@using Blazored.Modal.Services
+
+@using Data.Models
+@inject Data.Repositories.ITableRepo<TodoItem> TodoItemRepo
+
+<h3>TodosTable</h3>
+
+<input type="button" class="btn btn-primary" value="Create" @onclick="() => Create()" />
+
+<table class="table">
+    <thead>
+        <tr>
+            <th>Priority</th>
+            <th>Title</th>
+            <th>Description</th>
+            <th>Finished</th>
+            <th>Due Date</th>
+            <th></th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        <Virtualize Context="todoItem" Items="@Todos">
+            <ItemContent>
+                <tr>
+                    <td>@todoItem.Priority</td>
+                    <td>@todoItem.Title</td>
+                    <td>
+                        <span class="elipses">@todoItem.Detail</span>
+                    </td>
+                    <td>@todoItem.Finished</td>
+                    <td>@todoItem.DueDate</td>
+                    <td><input type="button" class="btn btn-primary" value="Edit" @onclick="() => Update(todoItem)" /></td>
+                    <td><input type="button" class="btn btn-danger" value="Delete" @onclick="() => Delete(todoItem)" /></td>
+                </tr>
+            </ItemContent>
+            <Placeholder>
+                <tr><td colspan="4">Loading...</td></tr>
+            </Placeholder>
+        </Virtualize>
+        <tr><td colspan="7" style="text-align: center">End of list</td></tr>
+    </tbody>
+</table>
+
+@code {
+
+    private List<TodoItem> Todos { get; set; } = new List<TodoItem>();
+
+    [CascadingParameter] public IModalService Modal { get; set; }
+
+    private TodoItem NewTodoItem { get; set; } = new TodoItem();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshFromRepo();
+        await base.OnInitializedAsync();
+    }
+
+    private async void Create()
+    {
+        var newItem = new TodoItem { PartitionKey = "Todo ver 1.0" };
+
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditTodoItem.CurrentTodo), newItem);
+
+        var newItemModal = Modal.Show<EditTodoItem>("Create new Todo", parameters);
+        var modalResult = await newItemModal.Result;
+
+        if (modalResult.Cancelled)
+        {
+            Console.WriteLine("Create new todo canncelled");
+        }
+        else
+        {
+            await RefreshFromRepo(true);
+        }
+    }
+
+    private async void Delete(TodoItem todoItem)
+    {
+        var currentItem = todoItem;
+
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(ConfirmDelete.RecordTitleName), currentItem.Title);
+
+        var confirmModal = Modal.Show<ConfirmDelete>($"Delete {currentItem.Title}", parameters);
+        var modalResult = await confirmModal.Result;
+
+        if(modalResult.Cancelled)
+        {
+            Console.WriteLine("Delete canccelled");
+        }
+        else
+        {
+            if( await TodoItemRepo.DeleteAsync(currentItem))
+            {
+                await RefreshFromRepo(true);
+            }
+            else
+            {
+                Console.WriteLine($"Error occured during delete the {currentItem.PartitionKey}: {currentItem.PartitionKey}");
+            }
+        }
+    }
+
+    private async void Update(TodoItem todoItem)
+    {
+        var parameters = new ModalParameters();
+        parameters.Add(nameof(EditTodoItem.CurrentTodo), todoItem);
+
+        var editModal = Modal.Show<EditTodoItem>($"Edit {todoItem.Title}", parameters);
+        var modalResult = await editModal.Result;
+
+        if(modalResult.Cancelled)
+        {
+            Console.WriteLine("Edit canncelled");
+        }
+        else
+        {
+            StateHasChanged();
+        }
+    }
+
+    private async Task RefreshFromRepo(bool callStatusHasChanged = false)
+    {
+        Todos = await TodoItemRepo.ListAsync(item => item.PartitionKey == "Todo ver 1.0");
+        if(callStatusHasChanged)
+        {
+            StateHasChanged();
+        }
+    }
+
+}

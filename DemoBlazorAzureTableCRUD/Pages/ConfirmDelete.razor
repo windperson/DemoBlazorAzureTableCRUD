@@ -1,0 +1,30 @@
+﻿@using Blazored.Modal
+@using Blazored.Modal.Services
+
+@inject IModalService ModalService
+
+<div class="simple-form">
+
+    <div class="form-group">
+        <p>Do you really delete @RecordTitleName ?</p>
+    </div>
+
+    <button @onclick="SubmitForm" class="btn btn-danger">Delete</button>
+    <button @onclick="Cancel" class="btn btn-secondary">Cancel</button>
+</div>
+
+
+@code {
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+    [Parameter] public string RecordTitleName { get; set; }
+
+    void SubmitForm()
+    {
+        BlazoredModal.Close(ModalResult.Ok($"RecordTitleName {RecordTitleName} was submitted successfully"));
+    }
+
+    void Cancel()
+    {
+        BlazoredModal.Cancel();
+    }
+}

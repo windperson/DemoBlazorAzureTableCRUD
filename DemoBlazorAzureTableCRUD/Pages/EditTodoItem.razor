@@ -1,0 +1,55 @@
+﻿@using Blazored.Modal
+@using Blazored.Modal.Services
+
+@using Data.Models
+@inject Data.Repositories.ITableRepo<TodoItem> TodoItemRepo
+
+<div class="simple-form">
+
+    <div class="form-group">
+        <label for="priority-name">Priority</label>
+        <input @bind="@CurrentTodo.Priority" type="number" class="form-control" id="priority-name" />
+    </div>
+
+    <div class="form-group">
+        <label for="title-name">Title</label>
+        <input @bind="@CurrentTodo.Title" type="text" class="form-control" id="title-name" />
+    </div>
+
+    <div class="form-group">
+        <label for="detail-name">Detail</label>
+        <textarea @bind="@CurrentTodo.Detail" class="form-control" id="detail-name" />
+    </div>
+
+    <div class="form-group">
+        <label for="finished-name">Finished</label>
+        <input @bind="@CurrentTodo.Finished" type="checkbox" class="form-control" id="finished-name" />
+    </div>
+
+    <div class="form-group">
+        <label for="duedate-name">DueDate</label>
+        <input @bind="@CurrentTodo.DueDate" type="date" class="form-control" id="duedate-name" />
+    </div>
+
+    <button @onclick="() => SaveUpdate()" class="btn btn-primary">Submit</button>
+    <button @onclick="BlazoredModal.Cancel" class="btn btn-secondary">Cancel</button>
+</div>
+
+
+@code {
+
+    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+
+    [Parameter] public TodoItem CurrentTodo { get; set; }
+
+    async void SaveUpdate()
+    {
+        var updateSuccess = await TodoItemRepo.UpdateAsync(CurrentTodo);
+
+        if(updateSuccess)
+        {
+            await BlazoredModal.Close(ModalResult.Ok<TodoItem>(CurrentTodo));
+        }
+    }
+
+}
