@@ -6,7 +6,18 @@
 
 <h3>TodosTable</h3>
 
-<input type="button" class="btn btn-primary" value="Create" @onclick="() => Create()" />
+<span>
+    <input type="button" class="btn btn-primary" value="Create" @onclick="() => Create()" />
+
+    <span style="float: right;">
+        
+        <label for="search-text">Filter:&nbsp;</label>
+        <input @bind="@SearchTerm" type="text" id="search-text"/>
+        <input type="button" class="btn btn-info" value="Go" @onclick="() => Filter()" />
+        &nbsp;
+        <input type="button" class="btn btn-secondary" value="Clear" @onclick="() => ResetFilter()" />
+    </span>
+</span>
 
 <table class="table">
     <thead>
@@ -31,27 +42,33 @@
                     </td>
                     <td>@todoItem.Finished</td>
                     <td>@todoItem.DueDate</td>
-                    <td><input type="button" class="btn btn-primary" value="Edit" @onclick="() => Update(todoItem)" /></td>
-                    <td><input type="button" class="btn btn-danger" value="Delete" @onclick="() => Delete(todoItem)" /></td>
+                    <td><input type="button" class="btn btn-primary" value="Edit" @onclick="() => Update(todoItem)" />
+                    </td>
+                    <td><input type="button" class="btn btn-danger" value="Delete" @onclick="() => Delete(todoItem)" />
+                    </td>
                 </tr>
             </ItemContent>
             <Placeholder>
-                <tr><td colspan="4">Loading...</td></tr>
+                <tr>
+                    <td colspan="4">Loading...</td>
+                </tr>
             </Placeholder>
         </Virtualize>
-        <tr><td colspan="7" style="text-align: center">End of list</td></tr>
+        <tr>
+            <td colspan="7" style="text-align: center">End of list</td>
+        </tr>
     </tbody>
 </table>
 
 @code {
-
-    private List<TodoItem> Todos { get; set; } = new List<TodoItem>();
+    private IList<TodoItem> Todos { get; set; } = new List<TodoItem>();
+    private IList<TodoItem> OriginFetchedTodos {get; set;} = new List<TodoItem>();
 
     [CascadingParameter] public IModalService Modal { get; set; }
 
     private TodoItem NewTodoItem { get; set; } = new TodoItem();
 
-    private bool NeedRender { get; set; } = false;
+    private string SearchTerm { get; set; } = string.Empty;
 
     protected override async Task OnInitializedAsync()
     {
@@ -90,13 +107,13 @@
         var confirmModal = Modal.Show<ConfirmDelete>($"Delete {currentItem.Title}", parameters);
         var modalResult = await confirmModal.Result;
 
-        if(modalResult.Cancelled)
+        if (modalResult.Cancelled)
         {
             Console.WriteLine("Delete canccelled");
         }
         else
         {
-            if( await TodoItemRepo.DeleteAsync(currentItem))
+            if (await TodoItemRepo.DeleteAsync(currentItem))
             {
                 await RefreshFromRepo();
                 StateHasChanged();
@@ -116,7 +133,7 @@
         var editModal = Modal.Show<EditTodoItem>($"Edit {todoItem.Title}", parameters);
         var modalResult = await editModal.Result;
 
-        if(modalResult.Cancelled)
+        if (modalResult.Cancelled)
         {
             Console.WriteLine("Edit canncelled");
         }
@@ -128,7 +145,27 @@
 
     private async Task RefreshFromRepo()
     {
-        Todos = await TodoItemRepo.ListAsync(item => item.PartitionKey == "Todo ver 1.0");
+        Todos =
+            (await TodoItemRepo.ListAsync(item => item.PartitionKey == "Todo ver 1.0")).OrderBy(x => x.DueDate).ToList();
     }
 
+    private void Filter()
+    {
+        if(!string.IsNullOrEmpty(SearchTerm))
+        {
+            OriginFetchedTodos = Todos;
+            Todos =  Todos.Where(x => x.Title.ToLower().Contains(SearchTerm) || x.Detail.ToLower().Contains(SearchTerm)).ToList();
+        }
+        else
+        {
+            Todos = OriginFetchedTodos;
+        }
+        StateHasChanged();
+    }
+
+    private void ResetFilter()
+    {
+        SearchTerm = string.Empty;
+        Filter();
+    }
 }
