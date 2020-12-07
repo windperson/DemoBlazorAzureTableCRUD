@@ -13,9 +13,9 @@
         
         <label for="search-text">Filter:&nbsp;</label>
         <input @bind="@SearchTerm" type="text" id="search-text"/>
-        <input type="button" class="btn btn-info" value="Go" @onclick="() => Filter()" />
+        <input type="button" class="btn btn-outline-info" value="Go" @onclick="() => Filter()" />
         &nbsp;
-        <input type="button" class="btn btn-secondary" value="Clear" @onclick="() => ResetFilter()" />
+        <input type="button" class="btn btn-outline-secondary" value="Clear" @onclick="() => ResetFilter()" />
     </span>
 </span>
 
@@ -147,14 +147,17 @@
     {
         Todos =
             (await TodoItemRepo.ListAsync(item => item.PartitionKey == "Todo ver 1.0")).OrderBy(x => x.DueDate).ToList();
+        OriginFetchedTodos = Todos;
     }
 
     private void Filter()
     {
         if(!string.IsNullOrEmpty(SearchTerm))
         {
-            OriginFetchedTodos = Todos;
-            Todos =  Todos.Where(x => x.Title.ToLower().Contains(SearchTerm) || x.Detail.ToLower().Contains(SearchTerm)).ToList();
+            if(Todos.Count != 0)
+            {
+                Todos = OriginFetchedTodos.Where(x => x.Title.ToLower().Contains(SearchTerm) || x.Detail.ToLower().Contains(SearchTerm)).ToList();
+            }
         }
         else
         {
