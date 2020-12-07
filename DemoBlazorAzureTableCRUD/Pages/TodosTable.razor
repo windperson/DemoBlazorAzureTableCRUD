@@ -51,6 +51,8 @@
 
     private TodoItem NewTodoItem { get; set; } = new TodoItem();
 
+    private bool NeedRender { get; set; } = false;
+
     protected override async Task OnInitializedAsync()
     {
         await RefreshFromRepo();
@@ -73,7 +75,8 @@
         }
         else
         {
-            await RefreshFromRepo(true);
+            await RefreshFromRepo();
+            StateHasChanged();
         }
     }
 
@@ -95,7 +98,8 @@
         {
             if( await TodoItemRepo.DeleteAsync(currentItem))
             {
-                await RefreshFromRepo(true);
+                await RefreshFromRepo();
+                StateHasChanged();
             }
             else
             {
@@ -122,13 +126,9 @@
         }
     }
 
-    private async Task RefreshFromRepo(bool callStatusHasChanged = false)
+    private async Task RefreshFromRepo()
     {
         Todos = await TodoItemRepo.ListAsync(item => item.PartitionKey == "Todo ver 1.0");
-        if(callStatusHasChanged)
-        {
-            StateHasChanged();
-        }
     }
 
 }
