@@ -6,18 +6,18 @@
 
 <h3>TodosTable</h3>
 
-<span>
+<div>
     <input type="button" class="btn btn-primary" value="Create" @onclick="() => Create()" />
 
-    <span style="float: right;">
-        
+    <span style="float: right;" class="form-inline">
         <label for="search-text">Filter:&nbsp;</label>
-        <input @bind="@SearchTerm" type="text" id="search-text"/>
-        <input type="button" class="btn btn-outline-info" value="Go" @onclick="() => Filter()" />
-        &nbsp;
-        <input type="button" class="btn btn-outline-secondary" value="Clear" @onclick="() => ResetFilter()" />
+        <input @bind="@SearchTerm" id="search-text" class="form-control" placeholder="type something to search" />
+        <span class="input-group-btn">
+            <input type="button" class="btn btn-outline-info" @onclick="() => Filter()" value="Search" />
+            <input type="button" class="btn btn-outline-secondary" @onclick="() => ResetFilter()" disabled="@ClearBtnDisabled" value="Clear" />
+        </span>
     </span>
-</span>
+</div>
 
 <table class="table">
     <thead>
@@ -42,9 +42,11 @@
                     </td>
                     <td>@todoItem.Finished</td>
                     <td>@todoItem.DueDate</td>
-                    <td><input type="button" class="btn btn-primary" value="Edit" @onclick="() => Update(todoItem)" />
+                    <td>
+                        <input type="button" class="btn btn-primary" value="Edit" @onclick="() => Update(todoItem)" />
                     </td>
-                    <td><input type="button" class="btn btn-danger" value="Delete" @onclick="() => Delete(todoItem)" />
+                    <td>
+                        <input type="button" class="btn btn-danger" value="Delete" @onclick="() => Delete(todoItem)" />
                     </td>
                 </tr>
             </ItemContent>
@@ -62,13 +64,18 @@
 
 @code {
     private IList<TodoItem> Todos { get; set; } = new List<TodoItem>();
-    private IList<TodoItem> OriginFetchedTodos {get; set;} = new List<TodoItem>();
+    private IList<TodoItem> OriginFetchedTodos { get; set; } = new List<TodoItem>();
 
     [CascadingParameter] public IModalService Modal { get; set; }
 
     private TodoItem NewTodoItem { get; set; } = new TodoItem();
 
     private string SearchTerm { get; set; } = string.Empty;
+
+    protected bool ClearBtnDisabled
+    {
+        get => string.IsNullOrEmpty(SearchTerm);
+    }
 
     protected override async Task OnInitializedAsync()
     {
@@ -145,18 +152,20 @@
 
     private async Task RefreshFromRepo()
     {
-        Todos =
+        Todos = OriginFetchedTodos =
             (await TodoItemRepo.ListAsync(item => item.PartitionKey == "Todo ver 1.0")).OrderBy(x => x.DueDate).ToList();
-        OriginFetchedTodos = Todos;
     }
 
     private void Filter()
     {
-        if(!string.IsNullOrEmpty(SearchTerm))
+        if (!string.IsNullOrEmpty(SearchTerm))
         {
-            if(Todos.Count != 0)
+            if (Todos.Count != 0)
             {
-                Todos = OriginFetchedTodos.Where(x => x.Title.ToLower().Contains(SearchTerm) || x.Detail.ToLower().Contains(SearchTerm)).ToList();
+                Todos = OriginFetchedTodos.Where(x =>
+                    x.Title.ToLower().Contains(SearchTerm) ||
+                    (!string.IsNullOrEmpty(x.Detail) && x.Detail.ToLower().Contains(SearchTerm)))
+                    .ToList();
             }
         }
         else
