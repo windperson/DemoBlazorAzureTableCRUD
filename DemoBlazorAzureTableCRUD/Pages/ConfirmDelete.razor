@@ -20,11 +20,11 @@
 
     void SubmitForm()
     {
-        BlazoredModal.Close(ModalResult.Ok($"RecordTitleName {RecordTitleName} was submitted successfully"));
+        BlazoredModal.CloseAsync(ModalResult.Ok($"RecordTitleName {RecordTitleName} was submitted successfully"));
     }
 
     void Cancel()
     {
-        BlazoredModal.Cancel();
+        BlazoredModal.CancelAsync();
     }
 }

@@ -32,7 +32,7 @@
     </div>
 
     <button @onclick="() => SaveUpdate()" class="btn btn-primary">Submit</button>
-    <button @onclick="BlazoredModal.Cancel" class="btn btn-secondary">Cancel</button>
+    <button @onclick="BlazoredModal.CancelAsync" class="btn btn-secondary">Cancel</button>
 </div>
 
 
@@ -48,7 +48,7 @@
 
         if(updateSuccess)
         {
-            await BlazoredModal.Close(ModalResult.Ok<TodoItem>(CurrentTodo));
+            await BlazoredModal.CloseAsync(ModalResult.Ok<TodoItem>(CurrentTodo));
         }
     }
 

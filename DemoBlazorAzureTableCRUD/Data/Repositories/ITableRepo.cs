@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace DemoBlazorAzureTableCRUD.Data.Repositories
 {
-    interface ITableRepo<T> where T : class
+    public interface ITableRepo<T> where T : class
     {
         Task<bool> CreateAsync(T newTodo);
         Task<bool> UpdateAsync(T updateTodo);

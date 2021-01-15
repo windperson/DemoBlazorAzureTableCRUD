@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="Azure.Data.Tables" Version="3.0.0-beta.3" />
-    <PackageReference Include="Blazored.Modal" Version="5.1.0" />
+    <PackageReference Include="Blazored.Modal" Version="6.0.0" />
   </ItemGroup>
 
 </Project>
