@@ -14,6 +14,8 @@ namespace DemoBlazorAzureTableCRUD.Data.Models
         public string Detail { get; set; }
         public bool Finished { get; set; }
         public DateTime? DueDate { get; set; }
+        
+        public string ImgUrlStr { get; set; }
 
         //ITableEntity implementations
         public string PartitionKey { get; set; } = "Todo ver 1.0";

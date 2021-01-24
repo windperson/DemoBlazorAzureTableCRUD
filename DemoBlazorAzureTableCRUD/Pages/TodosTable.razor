@@ -68,7 +68,7 @@
 
     [CascadingParameter] public IModalService Modal { get; set; }
 
-    private TodoItem NewTodoItem { get; set; } = new TodoItem();
+    private TodoItem NewTodoItem { get; set; } = new();
 
     private string SearchTerm { get; set; } = string.Empty;
 

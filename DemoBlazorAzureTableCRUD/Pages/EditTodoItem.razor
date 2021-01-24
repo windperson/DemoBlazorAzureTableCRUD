@@ -1,55 +1,113 @@
-﻿@using Blazored.Modal
+﻿@using Microsoft.Extensions.Configuration
+@inject IConfiguration Configuration
+@using Blazored.Modal
 @using Blazored.Modal.Services
+@using GranDen.Blazor.Bootstrap.ImageUpload
 
 @using Data.Models
+@using Azure.Storage.Blobs
 @inject Data.Repositories.ITableRepo<TodoItem> TodoItemRepo
 
 <div class="simple-form">
 
     <div class="form-group">
         <label for="priority-name">Priority</label>
-        <input @bind="@CurrentTodo.Priority" type="number" class="form-control" id="priority-name" />
+        <input @bind="@CurrentTodo.Priority" type="number" class="form-control" id="priority-name"/>
     </div>
 
     <div class="form-group">
         <label for="title-name">Title</label>
-        <input @bind="@CurrentTodo.Title" type="text" class="form-control" id="title-name" />
+        <input @bind="@CurrentTodo.Title" type="text" class="form-control" id="title-name"/>
     </div>
 
     <div class="form-group">
         <label for="detail-name">Detail</label>
-        <textarea @bind="@CurrentTodo.Detail" class="form-control" id="detail-name" />
+        <textarea @bind="@CurrentTodo.Detail" class="form-control" id="detail-name" ></textarea>
     </div>
 
     <div class="form-group">
         <label for="finished-name">Finished</label>
-        <input @bind="@CurrentTodo.Finished" type="checkbox" class="form-control" id="finished-name" />
+        <input @bind="@CurrentTodo.Finished" type="checkbox" class="form-control" id="finished-name"/>
     </div>
 
     <div class="form-group">
-        <label for="duedate-name">DueDate</label>
-        <input @bind="@CurrentTodo.DueDate" type="date" class="form-control" id="duedate-name" />
+        <label for="due-date-name">DueDate</label>
+        <input @bind="@CurrentTodo.DueDate" type="date" class="form-control" id="due-date-name"/>
     </div>
 
-    <button @onclick="() => SaveUpdate()" class="btn btn-primary">Submit</button>
+    <div class="form-row align-items-center">
+        <BootstrapImgUpload ShowPreview="true"
+                            PreviewContainerCssClass="p-1 vertical-scrollbar horizontal-scrollbar"
+                            PreviewImgCssClass="img-thumbnail img-min-size img-max-size"
+                            ContainerCssClass="d-flex flex-column-reverse justify-content-center p-1"
+                            PreviewImgSrc="@CurrentTodo.ImgUrlStr"
+                            InputFileChanged="OnInputFileChanged">
+        </BootstrapImgUpload>
+
+    </div>
+
+    <button @onclick="SaveUpdate" class="btn btn-primary">Submit</button>
     <button @onclick="BlazoredModal.CancelAsync" class="btn btn-secondary">Cancel</button>
 </div>
 
 
 @code {
 
-    [CascadingParameter] BlazoredModalInstance BlazoredModal { get; set; }
+    [CascadingParameter]
+    BlazoredModalInstance BlazoredModal { get; set; }
 
-    [Parameter] public TodoItem CurrentTodo { get; set; }
+    [Parameter]
+    public TodoItem CurrentTodo { get; set; }
+
+    private IBrowserFile _imgFile;
 
     async void SaveUpdate()
     {
+        var (isUploadSuccess, imgUrlStr) = await UploadImgToBlob(_imgFile);
+        if (!isUploadSuccess)
+        {
+            return;
+        }
+        CurrentTodo.ImgUrlStr = imgUrlStr;
+
         var updateSuccess = await TodoItemRepo.UpdateAsync(CurrentTodo);
 
-        if(updateSuccess)
+        if (updateSuccess)
         {
             await BlazoredModal.CloseAsync(ModalResult.Ok<TodoItem>(CurrentTodo));
         }
+    }
+
+    private async Task<(bool, string)> UploadImgToBlob(IBrowserFile browserFile)
+    {
+        var connectionString = Configuration.GetConnectionString("AzureBlobConnection");
+        var container = new BlobContainerClient(connectionString, "photo-upload");
+        await container.CreateIfNotExistsAsync();
+        var fileName = $"{Guid.NewGuid()}_{browserFile.Name}";
+        var blob = container.GetBlobClient(fileName);
+
+        const long maxUploadSize = 1024000L;
+        if (browserFile.Size > maxUploadSize)
+        {
+            throw new Exception($"File upload size limit reached, max allowed upload file is {maxUploadSize} byte(s)");
+        }
+
+        await using var fileStream = browserFile.OpenReadStream(maxUploadSize);
+        await blob.UploadAsync(fileStream, true);
+        var prop = await blob.GetPropertiesAsync();
+        if (prop.Value.ContentLength != browserFile.Size)
+        {
+            throw new Exception("Upload error");
+        }
+
+        var url = $"{container.Uri}/{fileName}";
+        return (true, url);
+    }
+
+
+    private void OnInputFileChanged(InputFileChangeEventArgs args)
+    {
+        _imgFile = args.File;
     }
 
 }
