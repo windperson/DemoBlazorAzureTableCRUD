@@ -35,7 +35,7 @@
         <input @bind="@CurrentTodo.DueDate" type="date" class="form-control" id="due-date-name"/>
     </div>
 
-    <div class="form-row align-items-center">
+    <div class="form-row align-items-center form-scrollbar">
         <BootstrapImgUpload ShowPreview="true"
                             PreviewContainerCssClass="p-1 vertical-scrollbar horizontal-scrollbar"
                             PreviewImgCssClass="img-thumbnail img-min-size img-max-size"
@@ -43,7 +43,6 @@
                             PreviewImgSrc="@CurrentTodo.ImgUrlStr"
                             InputFileChanged="OnInputFileChanged">
         </BootstrapImgUpload>
-
     </div>
 
     <button @onclick="SaveUpdate" class="btn btn-primary">Submit</button>
@@ -63,12 +62,9 @@
 
     async void SaveUpdate()
     {
-        var (isUploadSuccess, imgUrlStr) = await UploadImgToBlob(_imgFile);
-        if (!isUploadSuccess)
-        {
-            return;
-        }
-        CurrentTodo.ImgUrlStr = imgUrlStr;
+        var imgUrl = await UploadImgToBlob(_imgFile);
+        
+        CurrentTodo.ImgUrlStr = imgUrl.ToString();
 
         var updateSuccess = await TodoItemRepo.UpdateAsync(CurrentTodo);
 
@@ -78,12 +74,12 @@
         }
     }
 
-    private async Task<(bool, string)> UploadImgToBlob(IBrowserFile browserFile)
+    private async Task<Uri> UploadImgToBlob(IBrowserFile browserFile)
     {
         var connectionString = Configuration.GetConnectionString("AzureBlobConnection");
         var container = new BlobContainerClient(connectionString, "photo-upload");
         await container.CreateIfNotExistsAsync();
-        var fileName = $"{Guid.NewGuid()}_{browserFile.Name}";
+        var fileName = $"{System.Web.HttpUtility.UrlEncode(browserFile.Name, System.Text.Encoding.UTF8)}";
         var blob = container.GetBlobClient(fileName);
 
         const long maxUploadSize = 1024000L;
@@ -100,8 +96,7 @@
             throw new Exception("Upload error");
         }
 
-        var url = $"{container.Uri}/{fileName}";
-        return (true, url);
+        return blob.Uri;
     }
 
 

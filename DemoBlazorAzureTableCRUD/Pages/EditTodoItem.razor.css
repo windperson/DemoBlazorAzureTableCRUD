@@ -1,4 +1,11 @@
-﻿/*noinspection CssInvalidPseudoSelector*/
+﻿.form-scrollbar {
+    overflow-x: auto;
+    overflow-y: auto;
+    max-width: 420px;
+    max-height: 420px;
+}
+
+/*noinspection CssInvalidPseudoSelector*/
 ::deep .img-min-size {
     min-width: 100px;
     min-height: 100px;
@@ -6,18 +13,18 @@
 
 /*noinspection CssInvalidPseudoSelector*/
 ::deep .img-max-size {
-    max-width: 500px;
-    max-height: 500px;
+    max-width: 400px;
+    max-height: 400px;
 }
 
 /*noinspection CssInvalidPseudoSelector*/
 ::deep .vertical-scrollbar {
     overflow-y: auto;
-    max-height: 500px;
+    max-height: 400px;
 }
 
 /*noinspection CssInvalidPseudoSelector*/
 ::deep .horizontal-scrollbar {
     overflow-x: auto;
-    max-width: 500px;
+    max-width: 400px;
 }
